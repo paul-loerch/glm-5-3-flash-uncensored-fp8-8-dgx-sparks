@@ -1,0 +1,67 @@
+# Test fixture: a copy of launch/readiness.txt, used by the CPU checks when no launch/readiness.txt is next to patches/.
+# readiness.txt -- what rank 0's log must (and must not) show before the server counts as ready.
+# Read by launch/up.sh --wait. One rule per line:   <require|fail|info> <extended regular expression, as for grep -E>
+#   require  every rule must match somewhere in the log once "Application startup complete" has appeared;
+#            a missing line means a different configuration came up than the one intended
+#   fail     a match at any moment during the boot aborts the wait, and the matching line is printed
+#   info     printed once when seen; known noise, never a failure
+# @API_PORT@ is replaced by API_PORT from cluster.env. Blank lines and lines starting with # are ignored.
+
+# -- the patched container started as intended
+require  \[recipe-entrypoint\] all patches applied
+fail     \[recipe-entrypoint\] FATAL
+require  \[recipe-plugin\] tool parser glm45_auto registered
+# patch 035 (compact indexer exchange): applied at start; its bitwise self-check runs on the first long prefills
+require  \[OK\] patch 035 in place
+fail     \[patch-035\].*(MISMATCH|mismatch|ERROR|INACTIVE)
+
+# -- one 8-rank NCCL world, CUDA graphs captured
+require  world_size=8 rank=0 .*backend=nccl
+require  Graph capturing finished
+
+# -- the intended kernels: the SM90 sparse-MLA path on GB10 (the stock SM120 route is wrong here) and Triton FP8 MoE
+require  Using FLASHINFER_MLA_SPARSE_SM90 attention backend
+require  Using TRITON Fp8 MoE backend
+fail     Using FLASHINFER_MLA_SPARSE_SM120 attention backend
+fail     Using fp8_ds_mla KV cache format
+fail     pe_dim must be 64 for fp8_ds_mla
+fail     FilteredTopK fallback requires
+fail     Unknown SF transformation
+
+# -- weights are split across the ranks: about 40 GiB each (around 75 GiB would mean the experts are not split)
+require  Model loading took (3[6-9]|4[0-2])\.[0-9]+ GiB
+
+# -- cache and engine
+require  Setting attention block size to [0-9]+ tokens
+require  reserved [0-9]+(\.[0-9]+)? GiB memory for KV Cache
+require  GPU KV cache size: [0-9,]+ tokens
+require  init engine \(profile, create kv cache, warmup model\) took
+
+# -- the API is up on the port from cluster.env
+require  Starting vLLM server on http://0\.0\.0\.0:@API_PORT@
+require  Application startup complete
+
+# -- anything below means the boot failed
+fail     invalid choice
+fail     Free memory on device .* less than desired GPU memory utilization
+fail     Engine core initialization failed
+fail     died unexpectedly
+fail     EngineDeadError
+fail     no kernel image
+fail     cudaFuncSetAttribute.*invalid argument
+fail     OutOfMemoryError
+fail     NV_ERR_NO_MEMORY
+fail     NCCL (WARN|error)
+fail     Too many open files
+fail     Failed to initialize FlashInfer Allreduce
+
+# -- known noise during a healthy boot
+info     No available shared memory broadcast block found in 60 seconds
+info     SymmMemCommunicator: Device capability 12\.1 not supported
+info     Custom collectives are disabled
+info     No MLA prefill backend supports this model
+info     Using default MoE config\. Performance might be sub-optimal
+info     Using configuration from .*E=288.* for MoE layer
+info     TileLang JIT compilation
+info     Unknown vLLM environment variable detected
+info     cannot update draft decode metadata in place

@@ -1,0 +1,36 @@
+GLM-5.3-Flash FP8 on eight DGX Sparks -- recipe
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This repository contains no model weights, no container images and no datasets. It contains scripts, patches and
+documentation that build and run third-party software. Third-party material and its terms:
+
+Model files: patches/files/p024_glm53_chat_template.jinja and patches/files/gencfg/generation_config.json are modified
+  copies of files from zai-org/GLM-5.3-Flash and orcarouter/GLM-5.3-Flash-Uncensored-FP8 (MIT License; copyright as
+  stated on the model cards). The changes are described in PATCHES.md (section 5.2).
+
+vLLM (https://github.com/vllm-project/vllm), Apache License 2.0, Copyright contributors to the vLLM project.
+  The runtime patches in patches/ modify vLLM source files inside the container at start-up, and some modules in
+  patches/files/ are adapted from vLLM code (each such file names its origin in its header). The build-time edits in
+  image/ modify vLLM source files in the official image.
+
+FlashInfer (https://github.com/flashinfer-ai/flashinfer), Apache License 2.0.
+  image/glm53_sm121_v032.py edits FlashInfer source files in the official vLLM image at build time.
+
+MiaAI-Lab, GLM-5.3-Flash-NVFP4-Dual-DGX-Spark, MIT License, Copyright (c) 2026 MiaAI-Lab.
+  The SM121 build-time edits in image/ derive from its glm53-flash_SM121.py. The license text is in
+  image/LICENSES/MiaAI-Lab.MIT.txt.
+
+SpaceshipCreative, glm-5.3-flash-spark, Apache License 2.0 (with MIT parts from MiaAI-Lab).
+  The FlashInfer 0.7.0.post1 retargets (FP8 gate, FP8 tile cap, separate JIT module name) and the PDL variant in
+  image/ follow its patches.
+
+vLLM container image (vllm/vllm-openai), used as the base image by digest. It includes NVIDIA CUDA components that are
+  distributed under NVIDIA's own license terms.
+
+Model: the recipe was built and measured with orcarouter/GLM-5.3-Flash-Uncensored-FP8 (model card: license MIT,
+  base model zai-org/GLM-5.3-Flash). Download it yourself and follow the terms on its model card and on the base model's.
+
+Benchmark data, downloaded from Hugging Face by the bench/data/ scripts and not redistributed here (check each
+  dataset card for the current terms): allenai/WildChat-4.8M (ODC-BY; only user turns are used),
+  nebius/SWE-rebench-openhands-trajectories (CC-BY-4.0), zai-org/LongBench-v2 (Apache-2.0) and
+  princeton-nlp/SWE-bench_Lite_bm25_27K (see its dataset card).

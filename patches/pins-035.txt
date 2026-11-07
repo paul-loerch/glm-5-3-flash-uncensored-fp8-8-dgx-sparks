@@ -1,0 +1,10 @@
+# pins for patch 035 (gb10-idx-compact-xchg). Lines: <sha256>  <path under the vllm/ package dir>  <patch>; a pin checker (not included) checks the
+# non-comment lines against the image to be booted (the file as the SM121-baked v0.32.0 image carries it).
+3d97e02cb49a21402f3814cee2b4895af661fb1d5c4b5f7080c6b0bbc6db32a5  models/glm5next/nvidia/sparse_indexer.py  035
+75d14da5e2b8c237f7fc0a807d2b72677660a945c70d23825da3517801d9ca10  model_executor/layers/sparse_attn_indexer.py  035:contract
+276d3df25fce804ad45f727fe2b0149db82fa327c1392ce1eea2bf6dafa47ec4  models/glm5next/nvidia/ops/kpool_compress.py  035:contract(baked)
+# informational (not image files, so a pin checker must not see them as pins):
+# 9b70e533b9a1ec89d724472bc0b29b0f92a89a6c4b4dccac11b7dac6de8930c9  models/glm5next/nvidia/sparse_indexer.py  035:result   (what files/p035_apply.py makes of the first line's file)
+# 4cbbd68e0406838b0b983999fc07e29d300bbb91e93fe402a11bea5459c040fc  files/p035_apply.py  035:vendored
+# cf659b6fdcfa1057ef6a61c3d31d302d2dd15dfea6f3c96743697664d87e3e44  models/glm5next/nvidia/sparse_indexer.py  035:NOT-ACCEPTED(pristine-upstream,SM121-bake-missing)
+# e5d1baa2f8fac4e490cc2f22a5ca05f67d4dea03a420efdae05f3a2bbeb6616f  models/glm5next/nvidia/ops/kpool_compress.py  035:NOT-ACCEPTED(pristine-upstream,SM121-bake-missing)

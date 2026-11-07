@@ -1,0 +1,90 @@
+# recipe.lock.yaml -- every version and pin behind the published numbers. If you change one of these, re-measure.
+recipe:
+  name: glm53-flash-fp8-8x-dgx-spark
+  served_config: config/recipe.env   # the only configuration: TP 8, a 16 GiB KV pool, 8 sequences, MTP with 2 / 1 drafts, text only
+  measured: 23-24 October 2026        # the published numbers; booted again from this repository on 7 November 2026 (first boot
+                                      # with empty kernel caches 9.7 min) and re-measured with bench/run-bench.sh --only ctx,decode:
+                                      # one user 73.8 / 76.0 tok/s, prefill 3,212-3,438 tok/s, 1M prompt 323.8 s, 8 chat users 162.1 tok/s
+
+model:
+  repo: orcarouter/GLM-5.3-Flash-Uncensored-FP8
+  revision: 3cec42d6ed14ec197e328c09650c17fd3660c26a
+  base_model: zai-org/GLM-5.3-Flash
+  license: mit                      # from the model card
+  files: 71
+  bytes: 328366182468               # 305.8 GiB: block-scaled FP8 e4m3 [128, 128] weights plus BF16 tensors
+  served_name: glm53-uncen-fp8-tp8
+
+image:
+  base: vllm/vllm-openai:v0.32.0-aarch64@sha256:6ff5ff0ddf3658d2c2d677dac5ca2d4726ce0156b4371166d918181b210bd4bc
+  vllm_commit: 5df63a7203cd
+  cuda: 13.0.2
+  flashinfer: 0.7.0.post1
+  nccl: 2.30.7
+  python: "3.12"
+  build: image/Dockerfile + image/glm53_sm121_v032.py (build-time edits, see image/IMAGE.md)
+  tag: glm53-flash-sm121:v032-1
+
+runtime_patches:                   # patches/NNN-*.sh, applied at container start; each pins its target files by sha256
+  - "001"
+  - "003"
+  - "011"
+  - "012"
+  - "014"
+  - "019"
+  - "020"
+  - "022"
+  - "025"
+  - "029"
+  - "031"
+  - "032"
+  - "033"
+  - "035"
+plugins:
+  - patches/plugins/glm45_auto_tool_parser.py
+patch_dir_tree_hash: b675c2de61d24e07   # the launcher's identity check over patches/ (names + contents, 91 files); must be equal on all nodes
+
+serving:                           # what config/recipe.env sets
+  tensor_parallel: 8
+  nodes: 8
+  max_model_len: 1048576
+  max_num_seqs: 8
+  max_num_batched_tokens: 8192
+  long_prefill_token_threshold: 3840
+  kv_cache_dtype: fp8_e4m3
+  block_size: 256
+  kv_cache_memory_bytes: 17179869184   # 16 GiB per node = 2571268 tokens
+  moe_backend: triton
+  speculative: mtp, 2 draft tokens for one request and 1 for 2-8 (num_speculative_tokens_per_batch_size), probabilistic drafting
+  cudagraph_capture_sizes: [1, 2, 4, 6, 8, 16, 24, 32, 40, 48]
+  custom_all_reduce: false           # decode-size all-reduces go through patch 012 instead
+  prefix_caching: true
+  tool_calls: glm45_auto parser plugin (a grammar only when the client asks for one), reasoning parser glm45
+  language_model_only: true
+
+measured:                          # 23-24 October 2026, GPU clock cap 2,200 MHz; tools in bench/; every prompt new to the server
+  one_user_chat_decode_tok_s: 74.9            # median of 12 chat prompts, thinking off, 400 tokens each
+  one_user_coding_agent_decode_tok_s: 76.6    # median of 29 of 32 recorded agent turns (77.1 in a check run with the fixed timing tool)
+  chat_users_total_tok_s: {1: 71.6, 2: 94.2, 3: 113.2, 4: 124.8, 6: 124.4, 8: 164.1}
+  chat_first_token_s_p50_p90: {1: [0.19, 0.40], 8: [0.46, 1.38]}
+  prefill_tok_s: {8k: 3359, 32k: 3476, 128k: 3467, 256k: 3450, 512k: 3381, 1M: 3257}
+  prompt_seconds: {8k: 2.4, 32k: 9.4, 128k: 37.8, 256k: 76.0, 512k: 155.0, 1M: 319.3}
+  eight_32k_prompts: {all_answers_complete_s: 100.8, total_decode_tok_s: 173.8}
+  kv_pool_tokens: 2571268
+  quality: {tool_calls_valid_json: 24/24, tool_calls_ast: 20/24, needles: 12/12, gsm8k: 49/50, humaneval_plus: 20/20}
+
+hosts:                              # identical on all eight nodes when the numbers were measured
+  system: NVIDIA DGX Spark (GB10), 8 nodes
+  os: DGX OS 7.4.0 (OTA 7.5.0), Ubuntu 24.04.5 LTS
+  kernel: 7.0.0-1019-nvidia
+  nvidia_driver: 580.178.04
+  cuda_driver_api: "13.0"
+  docker: 29.6.2
+  connectx7_firmware: 28.45.4028
+  gpu_clock_cap_mhz: 2200          # nvidia-smi -lgc 0,2200 on every node
+
+fabric:
+  switch: MikroTik CRS812-8DS-2DQ-2DDQ
+  links: one 100G port per node, QSFP-DD to 4 x QSFP28 breakout AOCs, RS-FEC
+  mtu: 9000                         # switch ports l2mtu 9570; RoCE active_mtu 4096
+  transport: RoCE v2, NCCL over IB verbs, NCCL_MAX_NCHANNELS=4

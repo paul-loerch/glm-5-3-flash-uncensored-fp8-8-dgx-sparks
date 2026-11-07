@@ -1,0 +1,15 @@
+# informational: results of the appliers on the v0.32.0 originals + our own vendored sources (paths relative to patches/)
+8e9d71a1f4c3db3a312191105d0f2b15d2d8713bfec6c9e8a2e5207777ed4e95  model_executor/kernels/mhc/tilelang_kernels.py  011:result
+77f41a656775d6f3db928e5900c78f6f6e4f38b84b29c7ef59a48c9a31615125  model_executor/kernels/mhc/tilelang_kernels.py  019:result
+e80f60b8de9d5f82547f8eb92afc71e45e4d5406ff89812efd10c2835a0abd8c  model_executor/kernels/mhc/tilelang_kernels.py  011+019:result
+05a8b792dc27fb01544e199a6e329a5092433387fa13e2216c1dc5ce2b64f146  model_executor/kernels/mhc/tilelang.py  019:result
+af5d8dac025be6175fee132f55188f35e4518227c20ce9529f2f47ececa47f77  model_executor/kernels/mhc/tilelang.py  022:result
+4bea7f8ebe797ce7b82909b5dae03d7988e59fb6b845edc7b02d64317cae88d6  model_executor/kernels/mhc/tilelang.py  019+022:result
+92ab069cd173dad39ded4c35c3c3fbb374a855cd472b3592f13f92eb481131fb  models/glm5next/common/model.py  025:result
+# a850885b634ab9789e88886bf44fc719d5158178711cc611328650a01e22c99c  files/p011_apply.py  011:applier
+# 0f064e36bbcde71397af4d40a2b68d913dd19ca4794bce243bae3bfd2caff19a  files/p019_apply.py  019:applier
+# 3919494fb605695c9fef45d3a4bc7dcf79db38f99434d8c52bde5ace792cad2a  files/gb10_mhc_fn_bf16.py  019:module
+# 17ccd2735ed1086c6bc4d13fbdae68ebeb887a56d11406af3c4bd262ae33bb23  files/p022_apply.py  022:applier
+# 084d90ec8c6ebe45cdd5fde2d2caaa45f644005a0a476afa6bb23cf0f4a510f7  files/gb10_mhc_prs.py  022:module
+# 1c4f630a30814ced4a25deae944f2a6e1868f9d7bafa3c75c42ed8886a459ef4  files/p025_apply.py  025:applier
+# 7054a08312a5984859622419a562f92e3779ab9a2daacd32997948f6be055c3d  files/gb10_prefill_sp.py  025:module

@@ -1,0 +1,8 @@
+# build context = exactly what the Dockerfile COPYs
+*
+!Dockerfile
+!glm53_sm121_v032.py
+!verify_bake.py
+!gpu_smoke.py
+!LICENSES/
+!moe/
